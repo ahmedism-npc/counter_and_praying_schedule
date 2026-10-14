@@ -1,5 +1,5 @@
 name: counter_project
-description: "A new Flutter project."
+description: "Aplikasi Counter Tasbih dan Jadwal Sholat dengan Deteksi Lokasi Otomatis dan Pilihan Lokasi Manual."
 publish_to: 'none'
 version: 1.0.0+1
 

@@ -17,18 +17,25 @@ class CounterScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'Hitungan Tasbih:',
-              style: TextStyle(fontSize: 20),
+              'Hitungan Tasbih / Dzikir:',
+              style: TextStyle(fontSize: 18, color: Colors.black54),
             ),
             const SizedBox(height: 20),
             Consumer<CounterProvider>(
               builder: (context, counterProvider, child) {
-                return Text(
-                  '${counterProvider.counter}',
-                  style: const TextStyle(
-                    fontSize: 80,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.deepPurple,
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.teal.shade50,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${counterProvider.counter}',
+                    style: const TextStyle(
+                      fontSize: 80,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F766E),
+                    ),
                   ),
                 );
               },
@@ -44,6 +51,8 @@ class CounterScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(20),
+                    backgroundColor: Colors.grey.shade200,
+                    foregroundColor: Colors.black87,
                   ),
                   child: const Icon(Icons.remove, size: 30),
                 ),
@@ -67,7 +76,7 @@ class CounterScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     shape: const CircleBorder(),
                     padding: const EdgeInsets.all(20),
-                    backgroundColor: Colors.deepPurple,
+                    backgroundColor: const Color(0xFF0F766E),
                     foregroundColor: Colors.white,
                   ),
                   child: const Icon(Icons.add, size: 30),
