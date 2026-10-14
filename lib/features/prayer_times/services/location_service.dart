@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../core/constants/city_data.dart';
 import '../models/city.dart';
@@ -29,7 +28,7 @@ class LocationResult {
 }
 
 class LocationService {
-  /// Request permission and detect current device location
+  /// Request permission and detect current device location using GPS
   Future<LocationResult> getCurrentLocation() async {
     try {
       // 1. Check if location services are enabled on device
@@ -69,37 +68,13 @@ class LocationService {
         timeLimit: const Duration(seconds: 10),
       );
 
-      // 4. Try reverse geocoding (placemark)
-      String? detectedName;
-      try {
-        final placemarks = await placemarkFromCoordinates(
-          position.latitude,
-          position.longitude,
-        );
-        if (placemarks.isNotEmpty) {
-          final place = placemarks.first;
-          detectedName = place.subAdministrativeArea ??
-              place.locality ??
-              place.administrativeArea;
-        }
-      } catch (_) {
-        // Geocoding might be unavailable on certain platforms (e.g. Windows) or offline
-      }
-
-      // 5. Clean up name if available, or find nearest city using coordinates
-      City? matchedCity;
-      if (detectedName != null && detectedName.isNotEmpty) {
-        final clean = _cleanCityName(detectedName);
-        matchedCity = _findCityByKeyword(clean);
-      }
-
-      // Fallback: calculate nearest city by latitude/longitude distance
-      matchedCity ??= findNearestCity(position.latitude, position.longitude);
+      // 4. Calculate nearest city from GPS coordinates using Haversine formula
+      final matchedCity = findNearestCity(position.latitude, position.longitude);
 
       return LocationResult(
         status: LocationResultStatus.success,
         position: position,
-        detectedCityName: detectedName ?? matchedCity.lokasi,
+        detectedCityName: matchedCity.lokasi,
         matchedCity: matchedCity,
         message: 'Lokasi berhasil terdeteksi: ${matchedCity.lokasi}',
       );
@@ -109,22 +84,6 @@ class LocationService {
         message: 'Gagal mendeteksi lokasi: $e. Anda dapat memilih kota secara manual.',
       );
     }
-  }
-
-  String _cleanCityName(String raw) {
-    return raw
-        .replaceAll(RegExp(r'Kota|Kabupaten|Kab\.|Kecamatan', caseSensitive: false), '')
-        .trim();
-  }
-
-  City? _findCityByKeyword(String keyword) {
-    final upper = keyword.toUpperCase();
-    for (final city in CityData.popularCities) {
-      if (city.lokasi.contains(upper)) {
-        return city;
-      }
-    }
-    return null;
   }
 
   /// Calculates nearest Indonesian city using Haversine formula

@@ -88,9 +88,8 @@ counter_project/
 
 * **Framework**: [Flutter](https://flutter.dev/) (Channel stable, Dart 3.x)
 * **State Management**: [`provider`](https://pub.dev/packages/provider)
-* **Location & Geocoding**:
-  * [`geolocator`](https://pub.dev/packages/geolocator) — Akses sensor GPS & izin lokasi
-  * [`geocoding`](https://pub.dev/packages/geocoding) — Reverse geocoding koordinat ke nama wilayah
+* **Location**:
+  * [`geolocator`](https://pub.dev/packages/geolocator) — Akses sensor GPS & izin lokasi pengguna
 * **Networking**: [`http`](https://pub.dev/packages/http) — Konsumsi REST API
 * **API Endpoint**: [MyQuran v2 API](https://api.myquran.com) (Sinkronisasi jadwal sholat Kemenag RI)
 
