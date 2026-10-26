@@ -11,6 +11,7 @@ class PrayerProvider extends ChangeNotifier {
 
   City? _currentCity;
   PrayerTime? _prayerTime;
+  DateTime _selectedDate = DateTime.now();
   bool _isLoading = false;
   bool _isDetectingLocation = false;
   String _errorMessage = '';
@@ -19,6 +20,7 @@ class PrayerProvider extends ChangeNotifier {
 
   City? get currentCity => _currentCity;
   PrayerTime? get prayerTime => _prayerTime;
+  DateTime get selectedDate => _selectedDate;
   bool get isLoading => _isLoading;
   bool get isDetectingLocation => _isDetectingLocation;
   String get errorMessage => _errorMessage;
@@ -45,7 +47,7 @@ class PrayerProvider extends ChangeNotifier {
         _currentCity = result.matchedCity;
         _isGpsMode = true;
         _statusMessage = 'Lokasi Otomatis (GPS): ${_currentCity!.lokasi}';
-        await _fetchPrayerTimesInternal(_currentCity!.id);
+        await _fetchPrayerTimesInternal(_currentCity!.id, _selectedDate);
       } else {
         // Permission denied, service disabled, or error
         _errorMessage = result.message;
@@ -72,7 +74,16 @@ class PrayerProvider extends ChangeNotifier {
     _errorMessage = '';
     notifyListeners();
 
-    await _fetchPrayerTimesInternal(city.id);
+    await _fetchPrayerTimesInternal(city.id, _selectedDate);
+  }
+
+  /// Change selected date and fetch prayer times for that date
+  Future<void> setSelectedDate(DateTime date) async {
+    _selectedDate = date;
+    notifyListeners();
+    if (_currentCity != null) {
+      await _fetchPrayerTimesInternal(_currentCity!.id, date);
+    }
   }
 
   /// Search city by name and fetch its prayer times
@@ -91,7 +102,7 @@ class PrayerProvider extends ChangeNotifier {
         _statusMessage = isManual
             ? 'Lokasi Manual: ${city.lokasi}'
             : 'Lokasi Otomatis: ${city.lokasi}';
-        await _fetchPrayerTimesInternal(city.id);
+        await _fetchPrayerTimesInternal(city.id, _selectedDate);
       } else {
         _errorMessage = 'Kota "$cityName" tidak ditemukan dalam database.';
       }
@@ -103,17 +114,17 @@ class PrayerProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _fetchPrayerTimesInternal(String cityId) async {
+  Future<void> _fetchPrayerTimesInternal(String cityId, DateTime date) async {
     _isLoading = true;
     _errorMessage = '';
     notifyListeners();
 
     try {
-      final schedule = await _prayerService.getPrayerTime(cityId, DateTime.now());
+      final schedule = await _prayerService.getPrayerTime(cityId, date);
       if (schedule != null) {
         _prayerTime = schedule;
       } else {
-        _errorMessage = 'Jadwal sholat tidak ditemukan untuk tanggal hari ini.';
+        _errorMessage = 'Jadwal sholat tidak ditemukan untuk tanggal yang dipilih.';
       }
     } catch (e) {
       _errorMessage = e.toString();
@@ -128,7 +139,7 @@ class PrayerProvider extends ChangeNotifier {
     if (_isGpsMode) {
       await detectLocationAndFetchPrayerTime();
     } else if (_currentCity != null) {
-      await _fetchPrayerTimesInternal(_currentCity!.id);
+      await _fetchPrayerTimesInternal(_currentCity!.id, _selectedDate);
     }
   }
 }

@@ -1,46 +1,48 @@
-# 🕌 Jadwal Sholat & Tasbih Digital
+# 🕌 Jadwal Sholat, Tasbih Digital & Ibadah Terpadu
 
-> **Aplikasi Mobile Flutter** — Tugas Tampilan Awal Studi Kasus Pemrograman Mobile.  
-> Aplikasi penghitung dzikir/tasbih digital terintegrasi pengingat jadwal sholat harian akurat yang dilengkapi **deteksi lokasi otomatis via GPS (dengan izin pengguna)** serta opsi **pemilihan lokasi manual**.
-
----
-
-## 📌 Identitas Proyek & Pengembang
-
-* **Nama Pengembang / Mahasiswa**: 
-* **Topik / Studi Kasus**: *Counter dengan Jadwal Sholat dilengkapi Deteksi Lokasi Otomatis (Izin Pengguna) & Pilihan Lokasi Manual*
-* **Repositori**: `counter_project`
+> **Aplikasi Mobile Flutter** — Tugas Studi Kasus Pemrograman Mobile ITBS.  
+> Aplikasi komprehensif pendukung ibadah muslim yang menggabungkan **Jadwal Sholat Harian Akurat (GPS/Manual)**, **Counter Tasbih Digital**, **Kalender Hijriah & Masehi**, **Kompas Arah Kiblat Interaktif**, **Preferensi Kustomisasi (Tema Gelap/Terang, Bahasa, Getar)**, serta **Autentikasi & Sinkronisasi Agenda ke Google Calendar**.
 
 ---
 
-## 🚀 Fitur Utama Aplikasi
+## 🚀 Fitur-Fitur Utama Aplikasi
 
-### 1. 📿 Counter Tasbih Digital
-- **Quick Counter (Nilai Tambah di Home)**: Penghitung tasbih berbasis `StatefulWidget` langsung di beranda untuk dzikir cepat.
-- **Tasbih Layar Penuh**: Halaman counter khusus dengan visual melingkar, tombol increment (+), decrement (-), dan reset.
-- State management terintegrasi menggunakan `Provider`.
+### 1. 💫 Splash Screen Beranimasi (1 Detik)
+- Logo resmi aplikasi dengan animasi masuk (*scale & fade*) berdurasi 1.000 ms.
+- Inisialisasi preferensi pengguna (*theme, vibration, language*) sebelum beralih mulus ke navigasi utama.
 
-### 2. 📍 Deteksi Lokasi Otomatis (GPS dengan Izin Pengguna)
-- Meminta izin akses lokasi perangkat (`Geolocator.requestPermission()`).
-- Jika izin diberikan, aplikasi mendeteksi koordinat GPS pengguna secara akurat dan mencocokkan ke kota terdekat.
-- Jika izin ditolak oleh pengguna, aplikasi menampilkan dialog informatif dan mengarahkan pengguna untuk memilih kota secara manual tanpa hambatan.
-- Menampilkan indikator status lokasi aktif: **`DETEKSI GPS OTOMATIS`** atau **`PILIHAN LOKASI MANUAL`**.
+### 2. 🕌 Tab 1: Jadwal Sholat (Beranda Utama)
+- **Hero Header Islami**: Gradasi hijau toska dengan nama lokasi aktif, status GPS/manual, penanda sholat berikutnya (misal: *Isya' 18:36 WIB*), dan hitung mundur (*countdown*) *real-time*.
+- **Pembaruan Lokasi**: Tombol cepat *Update GPS* dan *Modal Bottom Sheet* untuk memilih atau mencari kota/kabupaten di seluruh Indonesia.
+- **Navigasi Tanggal**: Pengalih tanggal Masehi dan Hijriah harian.
+- **8 Waktu Sholat**: Menampilkan Imsak, Subuh, Terbit, Dhuha, Zuhur, Ashar, Maghrib, dan Isya' dengan kartu sorotan aktif untuk waktu sholat yang sedang berlangsung.
+- **Tashih Falakiyah**: Terhubung dengan sumber resmi Kemenag RI / Lembaga Falakiyah NU.
 
-### 3. 🗺️ Pemilihan Lokasi Manual (Jika Tidak Menggunakan GPS)
-- Disediakan daftar kota-kota populer di Indonesia (Jakarta, Bandung, Surabaya, Yogyakarta, Semarang, Malang, Medan, Makassar, Denpasar, Palembang, dll.) yang dapat dipilih langsung melalui *modal bottom sheet*.
-- Kolom pencarian interaktif untuk mencari seluruh kota/kabupaten di Indonesia via integrasi API.
+### 3. 📿 Tab 2: Tasbih Digital
+- **Antarmuka Minimalis**: Layar bersih bebas distraksi dengan angka counter berukuran besar.
+- **Kontrol Responsif**: Tombol Tambah (+1), Kurang (-1), dan Reset dengan dialog pengaman.
+- **Haptic Vibration**: Efek getar pada sentuhan (dapat diaktifkan/dinonaktifkan melalui Pengaturan).
 
-### 4. ⏰ Jadwal Sholat Harian Akurat
-- Menampilkan jadwal harian lengkap secara *real-time*:
-  - **Imsak**
-  - **Subuh**
-  - **Terbit**
-  - **Dhuha**
-  - **Dzuhur**
-  - **Ashar**
-  - **Maghrib**
-  - **Isya**
-- Sumber data terhubung dengan API Kemenag RI via `api.myquran.com`.
+### 4. 📅 Tab 3: Kalender Hijriah & Masehi
+- **Navigasi Bulanan**: Menampilkan bulan Masehi dan padanan bulan Hijriah.
+- **Grid Kalender Rapi**: Memuat angka tanggal Masehi (Latin) dan tanggal Hijriah (Arab).
+- **Penanda Khusus**: Hari Ahad (merah) dan Jumat (hijau), serta indikator hari ini.
+- **Detail Agenda Ibadah**: Menampilkan informasi puasa sunnah (Senin & Kamis, Ayyamul Bidh) dan peringatan hari besar Islam saat tanggal diklik.
+
+### 5. 🧭 Tab 4: Kompas Kiblat (Qibla Compass)
+- **Kalkulasi Sudut Presisi**: Perhitungan matematis *Great-Circle Bearing* dari koordinat GPS ke Ka'bah (Makkah).
+- **Piringan Berputar Dinamis**: Bergerak halus menyesuaikan sensor magnetometer perangkat.
+- **Jarum Ka'bah Emas**: Penunjuk arah kiblat dengan sudut derajat presisi dari arah Utara (misal: `294.21°`).
+- **Simulasi & Panduan**: Mendukung mode kalibrasi serta simulasi fallback di lingkungan emulator tanpa sensor fisik.
+
+### 6. ⚙️ Tab 5: Pengaturan & Sinkronisasi Akun
+- **Integrasi Akun Google**: Masuk dengan Akun Google (*Google Sign-In*).
+- **Google Calendar Sync**: Tombol *"Sinkronkan ke Google Calendar"* untuk mengekspor jadwal sholat dan agenda ibadah ke kalender pengguna secara otomatis.
+- **Kustomisasi Pengguna**:
+  - Pilihan Tema: `Mode Terang (Light)`, `Mode Gelap (Dark)`, atau `Ikuti Sistem`.
+  - Pilihan Bahasa: `Bahasa Indonesia (ID)` atau `English (EN)`.
+  - Efek Getar (Vibration): On / Off.
+- **Informasi Aplikasi**: Detail versi dan identitas perkuliahan ITBS.
 
 ---
 
@@ -48,78 +50,80 @@
 
 ```text
 counter_project/
-├── android/
+├── assets/
+│   └── images/
+│       └── app_logo.png              # Logo aplikasi resmi
 ├── lib/
 │   ├── core/
 │   │   ├── constants/
-│   │   │   ├── api_constants.dart      # URL endpoint API Jadwal Sholat
-│   │   │   └── city_data.dart          # Database kota populer & koordinat
-│   │   ├── theme/
+│   │   │   ├── api_constants.dart    # Endpoint MyQuran v2 API
+│   │   │   └── city_data.dart        # Database kota & koordinat GPS
 │   │   └── utils/
+│   │       └── date_formatter.dart   # Pemformat tanggal ID/EN
 │   ├── features/
-│   │   ├── counter/
-│   │   │   ├── providers/
-│   │   │   │   └── counter_provider.dart
-│   │   │   └── screens/
-│   │   │       └── counter_screen.dart # Halaman Tasbih Layar Penuh
-│   │   └── prayer_times/
-│   │       ├── models/
-│   │       │   ├── city.dart           # Model data Kota
-│   │       │   └── prayer_time.dart    # Model data Jadwal Sholat
-│   │       ├── providers/
-│   │       │   └── prayer_provider.dart# Manajemen state jadwal & lokasi
-│   │       ├── screens/
-│   │       │   └── prayer_screen.dart  # Halaman detail Jadwal Sholat
-│   │       └── services/
-│   │           ├── location_service.dart# Layanan izin GPS & geocoding
-│   │           └── prayer_service.dart # Layanan API jadwal sholat
+│   │   ├── auth/                     # Fitur Login Google & Sync Calendar
+│   │   │   ├── providers/auth_provider.dart
+│   │   │   └── services/google_calendar_service.dart
+│   │   ├── calendar/                 # Fitur Kalender Masehi & Hijriah
+│   │   │   └── screens/calendar_screen.dart
+│   │   ├── compass/                  # Fitur Kompas Kiblat
+│   │   │   └── screens/qibla_screen.dart
+│   │   ├── counter/                  # Fitur Tasbih Digital
+│   │   │   ├── providers/counter_provider.dart
+│   │   │   └── screens/counter_screen.dart
+│   │   ├── prayer_times/             # Fitur Jadwal Sholat & Lokasi
+│   │   │   ├── models/ (city.dart, prayer_time.dart)
+│   │   │   ├── providers/prayer_provider.dart
+│   │   │   ├── services/ (location_service.dart, prayer_service.dart)
+│   │   │   └── screens/prayer_screen.dart
+│   │   ├── settings/                 # Fitur Preferensi Pengguna
+│   │   │   ├── providers/settings_provider.dart
+│   │   │   └── screens/settings_screen.dart
+│   │   └── splash/                   # Fitur Splash Screen 1 Detik
+│   │       └── screens/splash_screen.dart
 │   ├── screens/
-│   │   └── home_screen.dart            # Kriteria Tugas: StatelessWidget Home
-│   └── main.dart                       # Entry point & MaterialApp Theme
+│   │   └── main_navigation_screen.dart # Shell Bottom Navigation 5 Tab
+│   └── main.dart                     # MultiProvider & MaterialApp Theme
 ├── test/
-│   └── widget_test.dart                # Pengujian otomatis kriteria tugas
-├── pubspec.yaml
-└── README.md
+│   └── widget_test.dart              # Automated UI & flow tests
+└── pubspec.yaml
 ```
 
 ---
 
-## 🛠️ Teknologi & Dependensi
+## 🛠️ Dependensi Utama
 
-* **Framework**: [Flutter](https://flutter.dev/) (Channel stable, Dart 3.x)
-* **State Management**: [`provider`](https://pub.dev/packages/provider)
-* **Location**:
-  * [`geolocator`](https://pub.dev/packages/geolocator) — Akses sensor GPS & izin lokasi pengguna
-* **Networking**: [`http`](https://pub.dev/packages/http) — Konsumsi REST API
-* **API Endpoint**: [MyQuran v2 API](https://api.myquran.com) (Sinkronisasi jadwal sholat Kemenag RI)
+* [`provider`](https://pub.dev/packages/provider): Manajemen state aplikasi terpusat.
+* [`geolocator`](https://pub.dev/packages/geolocator): Izin dan deteksi koordinat GPS pengguna.
+* [`flutter_compass`](https://pub.dev/packages/flutter_compass): Pembacaan sensor arah mata angin.
+* [`hijri`](https://pub.dev/packages/hijri): Kalkulasi konversi kalender Hijriah.
+* [`google_sign_in`](https://pub.dev/packages/google_sign_in): Autentikasi Google Account.
+* [`googleapis`](https://pub.dev/packages/googleapis): Integrasi Google Calendar API v3.
+* [`shared_preferences`](https://pub.dev/packages/shared_preferences): Penyimpanan preferensi tema, bahasa, dan getar.
 
 ---
 
-## 💻 Panduan Menjalankan Aplikasi
+## 🧪 Menjalankan Pengujian Otomatis
 
-### 1. Clone atau Buka Direktori Proyek
-```bash
-cd C:\ITBS\project-counter\counter_project
-```
-
-### 2. Unduh Dependensi
-```bash
-flutter pub get
-```
-
-### 3. Jalankan Pengujian Otomatis
-Untuk memvalidasi bahwa seluruh kriteria tugas terpenuhi:
+Untuk menjalankan seluruh rangkaian pengujian unit dan antarmuka:
 ```bash
 flutter test
 ```
-
-### 4. Jalankan Aplikasi
-Jalankan pada perangkat emulator Android, perangkat fisik, atau desktop:
-```bash
-flutter run
+*Hasil Verifikasi:*
+```text
+00:00 +0: Verifikasi Splash Screen 1 Detik dan Transisi ke Navigasi Utama
+00:01 +1: Verifikasi Fitur Counter Tasbih (Increment, Decrement, Reset)
+00:01 +2: Verifikasi Tab Kalender (Masehi & Hijriah)
+00:02 +3: Verifikasi Tab Kompas Kiblat
+00:02 +4: Verifikasi Tab Pengaturan & Status Login Google
+00:02 +5: All tests passed!
 ```
 
 ---
 
-## 📄 Lisensi
-Proyek ini dibuat untuk keperluan akademik dan perkuliahan di **ITBS**. Bebas dikembangkan dan dimanfaatkan untuk pembelajaran.
+## 💻 Menjalankan Aplikasi
+
+```bash
+cd counter_project
+flutter run
+```
