@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_theme.dart';
 import '../features/prayer_times/screens/prayer_screen.dart';
 import '../features/counter/screens/counter_screen.dart';
 import '../features/calendar/screens/calendar_screen.dart';
@@ -15,14 +16,6 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = const [
-    PrayerScreen(showAppBar: true),
-    CounterScreen(showAppBar: true),
-    CalendarScreen(showAppBar: true),
-    QiblaScreen(showAppBar: true),
-    SettingsScreen(showAppBar: true),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -30,13 +23,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          PrayerScreen(showAppBar: true, isActive: _currentIndex == 0),
+          const CounterScreen(showAppBar: true),
+          const CalendarScreen(showAppBar: true),
+          QiblaScreen(showAppBar: true, isActive: _currentIndex == 3),
+          const SettingsScreen(showAppBar: true),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.08),
               blurRadius: 10,
               offset: const Offset(0, -2),
             ),
@@ -50,8 +49,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             });
           },
           type: BottomNavigationBarType.fixed,
-          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-          selectedItemColor: const Color(0xFF0F766E),
+          backgroundColor: isDark ? AppColors.cardDark : Colors.white,
+          selectedItemColor: isDark ? AppColors.goldLight : AppColors.primary,
           unselectedItemColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
           selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
           unselectedLabelStyle: const TextStyle(fontSize: 11),

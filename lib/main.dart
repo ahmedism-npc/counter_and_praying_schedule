@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/theme/app_theme.dart';
 import 'features/auth/providers/auth_provider.dart';
+import 'features/calendar/providers/calendar_provider.dart';
 import 'features/counter/providers/counter_provider.dart';
 import 'features/prayer_times/providers/prayer_provider.dart';
 import 'features/settings/providers/settings_provider.dart';
@@ -25,44 +27,15 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CounterProvider()),
         ChangeNotifierProvider(create: (_) => PrayerProvider()),
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => CalendarProvider()),
       ],
       child: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, _) {
           return MaterialApp(
             title: 'Jadwal Sholat & Tasbih',
             themeMode: settingsProvider.themeMode,
-            theme: ThemeData(
-              brightness: Brightness.light,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF0F766E),
-                primary: const Color(0xFF0F766E),
-                brightness: Brightness.light,
-              ),
-              useMaterial3: true,
-              scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF0F766E),
-                foregroundColor: Colors.white,
-                centerTitle: true,
-                elevation: 0,
-              ),
-            ),
-            darkTheme: ThemeData(
-              brightness: Brightness.dark,
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color(0xFF0F766E),
-                primary: const Color(0xFF0F766E),
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-              scaffoldBackgroundColor: const Color(0xFF0F172A),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF0F172A),
-                foregroundColor: Colors.white,
-                centerTitle: true,
-                elevation: 0,
-              ),
-            ),
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
             scrollBehavior: const MaterialScrollBehavior().copyWith(
               overscroll: false,
               physics: const ClampingScrollPhysics(),

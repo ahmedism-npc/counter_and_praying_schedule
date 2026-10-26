@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../screens/main_navigation_screen.dart';
 import '../../prayer_times/providers/prayer_provider.dart';
 
@@ -23,6 +24,7 @@ class _SplashScreenState extends State<SplashScreen>
   double _loadingProgress = 0.0;
   Timer? _progressTimer;
   Timer? _messageTimer;
+  Timer? _secondMessageTimer;
   Timer? _navigateTimer;
 
   @override
@@ -90,7 +92,7 @@ class _SplashScreenState extends State<SplashScreen>
       }
     });
 
-    Timer(const Duration(milliseconds: 2200), () {
+    _secondMessageTimer = Timer(const Duration(milliseconds: 2200), () {
       if (mounted) {
         setState(() {
           _loadingMessage = 'Menyinkronkan kalender & kiblat...';
@@ -141,6 +143,7 @@ class _SplashScreenState extends State<SplashScreen>
     _pulseController.dispose();
     _progressTimer?.cancel();
     _messageTimer?.cancel();
+    _secondMessageTimer?.cancel();
     _navigateTimer?.cancel();
     super.dispose();
   }
@@ -148,8 +151,11 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F766E),
-      body: SafeArea(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: AppColors.heroGradient,
+        ),
+        child: SafeArea(
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -270,6 +276,7 @@ class _SplashScreenState extends State<SplashScreen>
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -28,6 +28,32 @@ class GoogleCalendarService {
     } catch (_) {}
   }
 
+  /// Fetches events from primary Google Calendar
+  Future<List<cal.Event>> fetchCalendarEvents({
+    DateTime? timeMin,
+    DateTime? timeMax,
+  }) async {
+    try {
+      final authClient = await _googleSignIn.authenticatedClient();
+      if (authClient == null) {
+        return [];
+      }
+
+      final calendarApi = cal.CalendarApi(authClient);
+      final events = await calendarApi.events.list(
+        'primary',
+        timeMin: (timeMin ?? DateTime.now().subtract(const Duration(days: 30))).toUtc(),
+        timeMax: (timeMax ?? DateTime.now().add(const Duration(days: 60))).toUtc(),
+        singleEvents: true,
+        orderBy: 'startTime',
+      );
+
+      return events.items ?? [];
+    } catch (_) {
+      return [];
+    }
+  }
+
   /// Syncs prayer times for today into Google Calendar
   Future<bool> syncPrayerTimesToCalendar({
     required String cityName,

@@ -1,36 +1,70 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../prayer_times/providers/prayer_provider.dart';
 
 class QiblaScreen extends StatefulWidget {
   final bool showAppBar;
+  final bool isActive;
 
-  const QiblaScreen({super.key, this.showAppBar = true});
+  const QiblaScreen({super.key, this.showAppBar = true, this.isActive = true});
 
   @override
   State<QiblaScreen> createState() => _QiblaScreenState();
 }
 
-class _QiblaScreenState extends State<QiblaScreen> {
-  double? _deviceHeading = 0.0;
+class _QiblaScreenState extends State<QiblaScreen> with WidgetsBindingObserver {
+  StreamSubscription<CompassEvent>? _compassSubscription;
+  final ValueNotifier<double?> _headingNotifier = ValueNotifier<double?>(0.0);
   bool _hasCompassSensor = true;
 
   @override
   void initState() {
     super.initState();
-    _initCompass();
+    WidgetsBinding.instance.addObserver(this);
+    if (widget.isActive) {
+      _startCompass();
+    }
   }
 
-  void _initCompass() {
+  @override
+  void didUpdateWidget(covariant QiblaScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive != oldWidget.isActive) {
+      if (widget.isActive) {
+        _startCompass();
+      } else {
+        _stopCompass();
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.isActive) {
+      _startCompass();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _stopCompass();
+    }
+  }
+
+  void _startCompass() {
+    if (_compassSubscription != null) return;
     try {
-      FlutterCompass.events?.listen((CompassEvent event) {
+      _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
         if (mounted) {
-          setState(() {
-            _deviceHeading = event.heading;
-            _hasCompassSensor = event.heading != null;
-          });
+          _headingNotifier.value = event.heading;
+          final hasSensor = event.heading != null;
+          if (_hasCompassSensor != hasSensor) {
+            setState(() {
+              _hasCompassSensor = hasSensor;
+            });
+          }
         }
       }, onError: (_) {
         if (mounted) {
@@ -42,6 +76,19 @@ class _QiblaScreenState extends State<QiblaScreen> {
     } catch (_) {
       _hasCompassSensor = false;
     }
+  }
+
+  void _stopCompass() {
+    _compassSubscription?.cancel();
+    _compassSubscription = null;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopCompass();
+    _headingNotifier.dispose();
+    super.dispose();
   }
 
   /// Menghitung sudut arah kiblat (Great-Circle bearing) dari koordinat pengguna ke Ka'bah (Makkah)
@@ -69,12 +116,6 @@ class _QiblaScreenState extends State<QiblaScreen> {
     final userLon = currentCity?.longitude ?? 112.6304;
     final qiblaAngle = _calculateQibla(userLat, userLon);
 
-    final heading = _deviceHeading ?? 0.0;
-    // Piringan kompas berputar berlawanan arah hadap perangkat (-heading)
-    // Jarum kiblat mengarah ke (qiblaAngle - heading)
-    final qiblaNeedleRotation = (qiblaAngle - heading) * (pi / 180.0);
-    final compassDialRotation = -heading * (pi / 180.0);
-
     return Scaffold(
       appBar: widget.showAppBar
           ? AppBar(
@@ -90,7 +131,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                       builder: (ctx) => AlertDialog(
                         title: const Row(
                           children: [
-                            Icon(Icons.explore, color: Color(0xFF0F766E)),
+                            Icon(Icons.explore, color: AppColors.primary),
                             SizedBox(width: 8),
                             Text('Kalibrasi Kompas'),
                           ],
@@ -118,232 +159,88 @@ class _QiblaScreenState extends State<QiblaScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Header Lokasi dengan Red Pin (sesuai acuan desain)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.location_on, color: Colors.red, size: 20),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      currentCity?.lokasi ?? 'Lokasi Terdeteksi',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
-                      ),
-                      textAlign: TextAlign.center,
-                      overflow: TextOverflow.ellipsis,
+              // Hero Header Card Kiblat dengan Gradiasi Elegan & Sentuhan Emas
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                decoration: BoxDecoration(
+                  gradient: AppColors.heroGradient,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primaryDark.withValues(alpha: 0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              Text(
-                'Derajat Sudut Kiblat dari Utara',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: isDark ? Colors.grey.shade400 : Colors.black54,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '${qiblaAngle.toStringAsFixed(2)}°',
-                style: const TextStyle(
-                  fontSize: 38,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F766E),
-                  letterSpacing: 0.5,
-                ),
-              ),
-
-              if (!_hasCompassSensor)
-                Container(
-                  margin: const EdgeInsets.only(top: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Mode simulasi: Sensor kompas fisik tidak terdeteksi pada emulator.',
-                    style: TextStyle(fontSize: 11, color: Colors.brown),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-
-              const SizedBox(height: 30),
-
-              // Visual Dial Kompas Interaktif
-              SizedBox(
-                width: 290,
-                height: 290,
-                child: Stack(
-                  alignment: Alignment.center,
+                child: Column(
                   children: [
-                    // Lingkaran Luar & Piringan Mata Angin (B, U, T, S)
-                    Transform.rotate(
-                      angle: compassDialRotation,
-                      child: Container(
-                        width: 280,
-                        height: 280,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isDark ? Colors.grey.shade900 : Colors.white,
-                          border: Border.all(
-                            color: const Color(0xFF0F766E).withValues(alpha: 0.3),
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0F766E).withValues(alpha: 0.12),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Garis & Titik Derajat
-                            ...List.generate(24, (i) {
-                              final rad = (i * 15) * (pi / 180.0);
-                              final isMajor = i % 6 == 0;
-                              return Transform.rotate(
-                                angle: rad,
-                                child: Align(
-                                  alignment: Alignment.topCenter,
-                                  child: Container(
-                                    margin: const EdgeInsets.only(top: 8),
-                                    width: isMajor ? 3 : 1.5,
-                                    height: isMajor ? 12 : 6,
-                                    color: isMajor ? const Color(0xFF0F766E) : Colors.grey.shade400,
-                                  ),
-                                ),
-                              );
-                            }),
-
-                            // Tanda Arah Mata Angin
-                            const Positioned(
-                              top: 24,
-                              child: Text(
-                                'U',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F766E),
-                                ),
-                              ),
-                            ),
-                            const Positioned(
-                              right: 24,
-                              child: Text(
-                                'T',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
-                            const Positioned(
-                              bottom: 24,
-                              child: Text(
-                                'S',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
-                            const Positioned(
-                              left: 24,
-                              child: Text(
-                                'B',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
-
-                            // Ornamen Mandala Islami di Tengah
-                            Container(
-                              width: 110,
-                              height: 110,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.teal.shade50.withValues(alpha: 0.6),
-                                border: Border.all(
-                                  color: Colors.teal.shade200,
-                                  width: 1,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.brightness_high,
-                                size: 54,
-                                color: Color(0xFF0F766E),
-                              ),
-                            ),
-                          ],
-                        ),
+                    // Badge Lokasi
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                       ),
-                    ),
-
-                    // Jarum Penunjuk Kiblat (Ka'bah Indicator)
-                    Transform.rotate(
-                      angle: qiblaNeedleRotation,
-                      child: Column(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // Ikon Ka'bah di Ujung Jarum
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFD97706),
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.amber.withValues(alpha: 0.5),
-                                  blurRadius: 8,
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.mosque,
-                              size: 16,
-                              color: Colors.white,
+                          const Icon(Icons.location_on, color: Colors.redAccent, size: 18),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              currentCity?.lokasi ?? 'Lokasi Terdeteksi',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          // Jarum Merah Penunjuk
-                          Container(
-                            width: 6,
-                            height: 75,
-                            decoration: const BoxDecoration(
-                              color: Colors.redAccent,
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-                            ),
-                          ),
-                          // Pivot Tengah
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.redAccent, width: 3),
-                            ),
-                          ),
-                          // Ekor Jarum Putih
-                          Container(
-                            width: 5,
-                            height: 65,
-                            decoration: BoxDecoration(
-                              color: Colors.grey.shade400,
-                              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    const Text(
+                      'Derajat Sudut Kiblat dari Utara',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${qiblaAngle.toStringAsFixed(1)}°',
+                      style: const TextStyle(
+                        fontSize: 42,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.goldLight,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.gold.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.mosque, size: 14, color: AppColors.goldLight),
+                          SizedBox(width: 6),
+                          Text(
+                            'Arah Menghadap Ka\'bah (Makkah)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.goldLight,
                             ),
                           ),
                         ],
@@ -353,9 +250,234 @@ class _QiblaScreenState extends State<QiblaScreen> {
                 ),
               ),
 
+              if (!_hasCompassSensor) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.gold.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
+                  ),
+                  child: const Text(
+                    'Mode simulasi: Sensor kompas fisik tidak terdeteksi pada emulator.',
+                    style: TextStyle(fontSize: 12, color: AppColors.goldDark, fontWeight: FontWeight.w600),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 24),
+
+              // Visual Dial Kompas Interaktif (Optimasi: Hanya Bagian Ini yang Rebuild dari Sensor Stream)
+              ValueListenableBuilder<double?>(
+                valueListenable: _headingNotifier,
+                builder: (context, headingValue, _) {
+                  final heading = headingValue ?? 0.0;
+                  final qiblaNeedleRotation = (qiblaAngle - heading) * (pi / 180.0);
+                  final compassDialRotation = -heading * (pi / 180.0);
+
+                  return SizedBox(
+                    width: 295,
+                    height: 295,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Cincin Luar Berpendar Halus (Glow effect)
+                        Container(
+                          width: 295,
+                          height: 295,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                AppColors.gold.withValues(alpha: isDark ? 0.2 : 0.15),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.75, 1.0],
+                            ),
+                          ),
+                        ),
+                        // Lingkaran Luar & Piringan Mata Angin (B, U, T, S)
+                        Transform.rotate(
+                          angle: compassDialRotation,
+                          child: Container(
+                            width: 280,
+                            height: 280,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isDark ? AppColors.cardDark : Colors.white,
+                              border: Border.all(
+                                color: isDark
+                                    ? AppColors.primaryLight.withValues(alpha: 0.8)
+                                    : AppColors.primary,
+                                width: 3.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.18),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                // Garis & Titik Derajat
+                                ...List.generate(24, (i) {
+                                  final rad = (i * 15) * (pi / 180.0);
+                                  final isMajor = i % 6 == 0;
+                                  return Transform.rotate(
+                                    angle: rad,
+                                    child: Align(
+                                      alignment: Alignment.topCenter,
+                                      child: Container(
+                                        margin: const EdgeInsets.only(top: 8),
+                                        width: isMajor ? 3 : 1.5,
+                                        height: isMajor ? 12 : 6,
+                                        color: isMajor ? AppColors.primary : Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  );
+                                }),
+
+                                // Tanda Arah Mata Angin
+                                const Positioned(
+                                  top: 24,
+                                  child: Text(
+                                    'U',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                                const Positioned(
+                                  right: 24,
+                                  child: Text(
+                                    'T',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                                const Positioned(
+                                  bottom: 24,
+                                  child: Text(
+                                    'S',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+                                const Positioned(
+                                  left: 24,
+                                  child: Text(
+                                    'B',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                ),
+
+                                // Ornamen Mandala Islami di Tengah
+                                Container(
+                                  width: 110,
+                                  height: 110,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isDark
+                                        ? AppColors.primaryDark.withValues(alpha: 0.5)
+                                        : AppColors.surfaceLight,
+                                    border: Border.all(
+                                      color: AppColors.gold.withValues(alpha: 0.6),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.brightness_high,
+                                    size: 54,
+                                    color: AppColors.gold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Jarum Penunjuk Kiblat (Ka'bah Indicator)
+                        Transform.rotate(
+                          angle: qiblaNeedleRotation,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              // Ikon Ka'bah di Ujung Jarum dengan Efek Emas
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.goldDark,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.gold.withValues(alpha: 0.6),
+                                      blurRadius: 10,
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.mosque,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              // Jarum Merah Penunjuk
+                              Container(
+                                width: 6,
+                                height: 75,
+                                decoration: const BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
+                                ),
+                              ),
+                              // Pivot Tengah
+                              Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.redAccent, width: 3),
+                                ),
+                              ),
+                              // Ekor Jarum Putih
+                              Container(
+                                width: 5,
+                                height: 65,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade400,
+                                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
               const SizedBox(height: 38),
 
-              // Tombol Arahkan Kiblat dengan Kamera (sesuai acuan Gambar 3)
+              // Tombol Arahkan Kiblat dengan Kamera
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -365,7 +487,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                       builder: (ctx) => AlertDialog(
                         title: const Row(
                           children: [
-                            Icon(Icons.camera_alt, color: Color(0xFF0F766E)),
+                            Icon(Icons.camera_alt, color: AppColors.primary),
                             SizedBox(width: 8),
                             Text('Mode Kamera AR'),
                           ],
@@ -388,7 +510,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E293B),
+                    backgroundColor: isDark ? AppColors.surfaceDark : AppColors.cardDark,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(

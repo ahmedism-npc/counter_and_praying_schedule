@@ -2,46 +2,104 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:provider/provider.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatter.dart';
 import '../providers/prayer_provider.dart';
 import '../services/location_service.dart';
 
+class PrayerCountdownData {
+  final String nextPrayerName;
+  final String nextPrayerTime;
+  final String countdownString;
+
+  const PrayerCountdownData({
+    required this.nextPrayerName,
+    required this.nextPrayerTime,
+    required this.countdownString,
+  });
+}
+
 class PrayerScreen extends StatefulWidget {
   final bool showAppBar;
+  final bool isActive;
 
-  const PrayerScreen({super.key, this.showAppBar = true});
+  const PrayerScreen({super.key, this.showAppBar = true, this.isActive = true});
 
   @override
   State<PrayerScreen> createState() => _PrayerScreenState();
 }
 
-class _PrayerScreenState extends State<PrayerScreen> {
+class _PrayerScreenState extends State<PrayerScreen> with WidgetsBindingObserver {
   final TextEditingController _searchController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   Timer? _countdownTimer;
-  String _nextPrayerName = 'Isya';
-  String _nextPrayerTime = '18:36';
-  String _countdownString = '- 00 : 00 : 00';
+
+  final ValueNotifier<PrayerCountdownData> _countdownNotifier = ValueNotifier(
+    const PrayerCountdownData(
+      nextPrayerName: 'Memuat...',
+      nextPrayerTime: '--:--',
+      countdownString: '-- : -- : --',
+    ),
+  );
 
   @override
   void initState() {
     super.initState();
-    _startCountdownTimer();
+    WidgetsBinding.instance.addObserver(this);
+    if (widget.isActive) {
+      _startCountdownTimer();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _updateCountdown();
+      });
+    }
   }
 
   @override
-  void dispose() {
-    _countdownTimer?.cancel();
-    _searchController.dispose();
-    super.dispose();
+  void didUpdateWidget(covariant PrayerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive != oldWidget.isActive) {
+      if (widget.isActive) {
+        _startCountdownTimer();
+        _updateCountdown();
+      } else {
+        _stopCountdownTimer();
+      }
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && widget.isActive) {
+      _startCountdownTimer();
+      _updateCountdown();
+    } else if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _stopCountdownTimer();
+    }
   }
 
   void _startCountdownTimer() {
+    _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) {
         _updateCountdown();
       }
     });
+  }
+
+  void _stopCountdownTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = null;
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopCountdownTimer();
+    _countdownNotifier.dispose();
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _updateCountdown() {
@@ -85,11 +143,11 @@ class _PrayerScreenState extends State<PrayerScreen> {
       final minutes = (minDiff.inMinutes % 60).toString().padLeft(2, '0');
       final seconds = (minDiff.inSeconds % 60).toString().padLeft(2, '0');
 
-      setState(() {
-        _nextPrayerName = nextPrayer!['name']!;
-        _nextPrayerTime = nextPrayer['time']!;
-        _countdownString = '- $hours : $minutes : $seconds';
-      });
+      _countdownNotifier.value = PrayerCountdownData(
+        nextPrayerName: nextPrayer['name']!,
+        nextPrayerTime: nextPrayer['time']!,
+        countdownString: '- $hours : $minutes : $seconds',
+      );
     }
   }
 
@@ -125,7 +183,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result.message),
-          backgroundColor: Colors.teal.shade700,
+          backgroundColor: AppColors.primary,
           duration: const Duration(seconds: 2),
         ),
       );
@@ -155,7 +213,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
                     height: 4,
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
+                      color: Colors.grey.shade400,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -163,7 +221,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     child: Row(
                       children: [
-                        Icon(Icons.location_city, color: Color(0xFF0F766E)),
+                        Icon(Icons.location_city, color: AppColors.primary),
                         SizedBox(width: 8),
                         Text(
                           'Pilih Kota / Kabupaten',
@@ -207,17 +265,17 @@ class _PrayerScreenState extends State<PrayerScreen> {
                         return ListTile(
                           leading: Icon(
                             Icons.place,
-                            color: isSelected ? const Color(0xFF0F766E) : Colors.grey,
+                            color: isSelected ? AppColors.primary : Colors.grey,
                           ),
                           title: Text(
                             city.lokasi,
                             style: TextStyle(
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? const Color(0xFF0F766E) : null,
+                              color: isSelected ? AppColors.primary : null,
                             ),
                           ),
                           trailing: isSelected
-                              ? const Icon(Icons.check_circle, color: Color(0xFF0F766E))
+                              ? const Icon(Icons.check_circle, color: AppColors.primary)
                               : null,
                           onTap: () {
                             provider.selectManualCity(city);
@@ -259,6 +317,11 @@ class _PrayerScreenState extends State<PrayerScreen> {
       body: Consumer<PrayerProvider>(
         builder: (context, prayerProvider, _) {
           final pt = prayerProvider.prayerTime;
+          if (pt != null && _countdownNotifier.value.nextPrayerName == 'Memuat...') {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) _updateCountdown();
+            });
+          }
           final currentCityName = prayerProvider.currentCity?.lokasi ?? 'Memuat lokasi...';
           final selectedHijri = HijriCalendar.fromDate(_selectedDate);
 
@@ -267,15 +330,11 @@ class _PrayerScreenState extends State<PrayerScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Hero Header Islami (Acuan Gambar 1)
+                // Hero Header Islami dengan Gradiasi Elegan Zamrud & Sentuhan Emas
                 Container(
                   padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF064E3B), Color(0xFF0F766E)],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
+                    gradient: AppColors.heroGradient,
                   ),
                   child: Column(
                     children: [
@@ -286,8 +345,9 @@ class _PrayerScreenState extends State<PrayerScreen> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.2),
+                            color: Colors.black.withValues(alpha: 0.25),
                             borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -313,31 +373,45 @@ class _PrayerScreenState extends State<PrayerScreen> {
                       ),
                       const SizedBox(height: 18),
 
-                      // Next Prayer Title
-                      Text(
-                        '$_nextPrayerName $_nextPrayerTime WIB',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Countdown Timer
-                      Text(
-                        _countdownString,
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.teal.shade100,
-                          letterSpacing: 1.5,
-                        ),
+                      // Next Prayer Title & Countdown (Optimasi: Hanya Bagian Ini yang Rebuild Per Detik)
+                      ValueListenableBuilder<PrayerCountdownData>(
+                        valueListenable: _countdownNotifier,
+                        builder: (context, countdownData, _) {
+                          return Column(
+                            children: [
+                              Text(
+                                '${countdownData.nextPrayerName} ${countdownData.nextPrayerTime} WIB',
+                                style: const TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                child: Text(
+                                  countdownData.countdownString,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.goldLight,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 16),
 
-                      // Tombol Update Lokasi / GPS (Shortcut Kiblat dihapus sesuai permintaan)
+                      // Tombol Update Lokasi / GPS
                       OutlinedButton.icon(
                         onPressed: prayerProvider.isDetectingLocation
                             ? null
@@ -354,7 +428,7 @@ class _PrayerScreenState extends State<PrayerScreen> {
                           style: const TextStyle(color: Colors.white, fontSize: 13),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.white54),
+                          side: const BorderSide(color: Colors.white60),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         ),
@@ -365,14 +439,17 @@ class _PrayerScreenState extends State<PrayerScreen> {
 
                 const SizedBox(height: 12),
 
-                // Date Switcher Card (Acuan Gambar 1)
+                // Date Switcher Card
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+                      color: isDark ? AppColors.cardDark : AppColors.surfaceLight,
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isDark ? AppColors.primaryLight.withValues(alpha: 0.2) : AppColors.primary.withValues(alpha: 0.15),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -401,7 +478,8 @@ class _PrayerScreenState extends State<PrayerScreen> {
                               '${selectedHijri.hDay} ${selectedHijri.longMonthName} ${selectedHijri.hYear} H',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: isDark ? Colors.grey.shade400 : Colors.black54,
+                                color: isDark ? AppColors.goldLight : AppColors.goldDark,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ],
@@ -423,32 +501,39 @@ class _PrayerScreenState extends State<PrayerScreen> {
 
                 const SizedBox(height: 12),
 
-                // Daftar 8 Waktu Sholat (Acuan Gambar 1)
+                // Daftar 8 Waktu Sholat
                 if (prayerProvider.isLoading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else if (pt != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Column(
-                      children: [
-                        _buildPrayerItem('Imsak', pt.imsak, Icons.nightlight_outlined, Icons.volume_off, false),
-                        _buildPrayerItem('Subuh', pt.subuh, Icons.wb_twilight, Icons.volume_up, _nextPrayerName == 'Subuh'),
-                        _buildPrayerItem('Terbit', pt.terbit, Icons.wb_sunny_outlined, Icons.notifications_none, false),
-                        _buildPrayerItem('Dhuha', pt.dhuha, Icons.wb_sunny_outlined, Icons.notifications_none, false),
-                        _buildPrayerItem('Zuhur', pt.dzuhur, Icons.wb_sunny, Icons.volume_up, _nextPrayerName == 'Zuhur'),
-                        _buildPrayerItem('Ashar', pt.ashar, Icons.wb_cloudy_outlined, Icons.volume_up, _nextPrayerName == 'Ashar'),
-                        _buildPrayerItem('Maghrib', pt.maghrib, Icons.brightness_4_outlined, Icons.volume_up, _nextPrayerName == 'Maghrib'),
-                        _buildPrayerItem('Isya\'', pt.isya, Icons.bedtime_outlined, Icons.volume_up, _nextPrayerName == 'Isya'),
-                      ],
-                    ),
+                  ValueListenableBuilder<PrayerCountdownData>(
+                    valueListenable: _countdownNotifier,
+                    builder: (context, countdownData, _) {
+                      final activeName = countdownData.nextPrayerName;
+
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Column(
+                          children: [
+                            _buildPrayerItem('Imsak', pt.imsak, Icons.nightlight_outlined, Icons.volume_off, false, isDark),
+                            _buildPrayerItem('Subuh', pt.subuh, Icons.wb_twilight, Icons.volume_up, activeName == 'Subuh', isDark),
+                            _buildPrayerItem('Terbit', pt.terbit, Icons.wb_sunny_outlined, Icons.notifications_none, false, isDark),
+                            _buildPrayerItem('Dhuha', pt.dhuha, Icons.wb_sunny_outlined, Icons.notifications_none, false, isDark),
+                            _buildPrayerItem('Zuhur', pt.dzuhur, Icons.wb_sunny, Icons.volume_up, activeName == 'Zuhur', isDark),
+                            _buildPrayerItem('Ashar', pt.ashar, Icons.wb_cloudy_outlined, Icons.volume_up, activeName == 'Ashar', isDark),
+                            _buildPrayerItem('Maghrib', pt.maghrib, Icons.brightness_4_outlined, Icons.volume_up, activeName == 'Maghrib', isDark),
+                            _buildPrayerItem('Isya\'', pt.isya, Icons.bedtime_outlined, Icons.volume_up, activeName == 'Isya', isDark),
+                          ],
+                        ),
+                      );
+                    },
                   ),
 
                 const SizedBox(height: 18),
 
-                // Footer Validasi Waktu Sholat (Acuan Gambar 1)
+                // Footer Validasi Waktu Sholat
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Column(
@@ -467,11 +552,11 @@ class _PrayerScreenState extends State<PrayerScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F766E),
+                              color: AppColors.primary,
                             ),
                           ),
                           const SizedBox(width: 4),
-                          Icon(Icons.check_circle, size: 14, color: Colors.teal.shade700),
+                          Icon(Icons.check_circle, size: 14, color: isDark ? AppColors.gold : AppColors.primary),
                         ],
                       ),
                     ],
@@ -486,21 +571,44 @@ class _PrayerScreenState extends State<PrayerScreen> {
     );
   }
 
-  Widget _buildPrayerItem(String name, String time, IconData prayerIcon, IconData actionIcon, bool isActive) {
+  Widget _buildPrayerItem(
+    String name,
+    String time,
+    IconData prayerIcon,
+    IconData actionIcon,
+    bool isActive,
+    bool isDark,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 3.5),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isActive ? const Color(0xFF0F766E) : null,
-        borderRadius: BorderRadius.circular(10),
-        border: isActive ? null : Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+        color: isActive
+            ? AppColors.primary
+            : (isDark ? AppColors.cardDark : Colors.white),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isActive
+              ? AppColors.gold
+              : (isDark ? Colors.grey.shade800 : Colors.grey.withValues(alpha: 0.2)),
+          width: isActive ? 1.5 : 1.0,
+        ),
+        boxShadow: isActive
+            ? [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ]
+            : null,
       ),
       child: Row(
         children: [
           Icon(
             prayerIcon,
             size: 22,
-            color: isActive ? Colors.white : Colors.grey.shade600,
+            color: isActive ? AppColors.goldLight : (isDark ? Colors.grey.shade300 : Colors.grey.shade600),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -518,14 +626,14 @@ class _PrayerScreenState extends State<PrayerScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: isActive ? Colors.white : null,
+              color: isActive ? AppColors.goldLight : null,
             ),
           ),
           const SizedBox(width: 14),
           Icon(
             actionIcon,
             size: 18,
-            color: isActive ? Colors.white : Colors.grey.shade400,
+            color: isActive ? AppColors.goldLight : Colors.grey.shade400,
           ),
         ],
       ),

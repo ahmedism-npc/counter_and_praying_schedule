@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/theme/app_theme.dart';
 import '../features/counter/screens/counter_screen.dart';
 import '../features/prayer_times/providers/prayer_provider.dart';
 import '../features/prayer_times/screens/prayer_screen.dart';
@@ -35,7 +36,7 @@ class HomeScreen extends StatelessWidget {
                 child: const Icon(
                   Icons.mosque,
                   size: 72,
-                  color: Color(0xFF0F766E),
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -47,7 +48,7 @@ class HomeScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F766E),
+                  color: AppColors.primary,
                 ),
               ),
               const SizedBox(height: 8),
@@ -129,14 +130,14 @@ class _SimpleCounterSectionState extends State<SimpleCounterSection> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.touch_app, color: Color(0xFF0F766E), size: 20),
+                    Icon(Icons.touch_app, color: AppColors.primary, size: 20),
                     SizedBox(width: 8),
                     Text(
                       'Counter Tasbih (Nilai Tambah)',
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F766E),
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
@@ -152,7 +153,7 @@ class _SimpleCounterSectionState extends State<SimpleCounterSection> {
                   },
                   style: TextButton.styleFrom(
                     visualDensity: VisualDensity.compact,
-                    foregroundColor: const Color(0xFF0F766E),
+                    foregroundColor: AppColors.primary,
                   ),
                   child: const Text('Layar Penuh >'),
                 ),
@@ -170,7 +171,7 @@ class _SimpleCounterSectionState extends State<SimpleCounterSection> {
                 style: const TextStyle(
                   fontSize: 52,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F766E),
+                  color: AppColors.primary,
                 ),
               ),
             ),
@@ -195,7 +196,7 @@ class _SimpleCounterSectionState extends State<SimpleCounterSection> {
                   icon: const Icon(Icons.add),
                   tooltip: 'Tambah (+1)',
                   style: IconButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F766E),
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                   ),
                 ),
@@ -275,14 +276,14 @@ class PrayerPreviewSection extends StatelessWidget {
                     const Row(
                       children: [
                         Icon(Icons.access_time_filled,
-                            color: Color(0xFF0F766E), size: 20),
+                            color: AppColors.primary, size: 20),
                         SizedBox(width: 8),
                         Text(
                           'Jadwal Sholat Hari Ini',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF0F766E),
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -394,7 +395,7 @@ class PrayerPreviewSection extends StatelessWidget {
                         icon: const Icon(Icons.calendar_month, size: 16),
                         label: const Text('Jadwal Lengkap'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F766E),
+                          backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                         ),
                       ),
@@ -422,7 +423,7 @@ class PrayerPreviewSection extends StatelessWidget {
           style: const TextStyle(
             fontSize: 13,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF0F766E),
+            color: AppColors.primary,
           ),
         ),
       ],

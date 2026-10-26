@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/constants/app_translations.dart';
+import '../../../core/theme/app_theme.dart';
 import '../providers/settings_provider.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../prayer_times/providers/prayer_provider.dart';
@@ -89,11 +90,11 @@ class SettingsScreen extends StatelessWidget {
         title,
         style: TextStyle(
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-          color: isSelected ? const Color(0xFF0F766E) : null,
+          color: isSelected ? AppColors.primary : null,
         ),
       ),
       trailing: isSelected
-          ? const Icon(Icons.check_circle, color: Color(0xFF0F766E))
+          ? const Icon(Icons.check_circle, color: AppColors.primary)
           : const Icon(Icons.circle_outlined, color: Colors.grey),
       onTap: onTap,
     );
@@ -136,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
                               ? NetworkImage(authProvider.photoUrl!)
                               : null,
                           child: authProvider.photoUrl == null
-                              ? const Icon(Icons.person, size: 36, color: Color(0xFF0F766E))
+                              ? const Icon(Icons.person, size: 36, color: AppColors.primary)
                               : null,
                         ),
                         const SizedBox(width: 14),
@@ -174,7 +175,7 @@ class SettingsScreen extends StatelessWidget {
                                 ? null
                                 : () => authProvider.signInWithGoogle(),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0F766E),
+                              backgroundColor: AppColors.primary,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
@@ -233,7 +234,7 @@ class SettingsScreen extends StatelessWidget {
                               : const Icon(Icons.sync),
                           label: Text(AppTranslations.tr('sync_calendar', lang)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F766E),
+                            backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -282,13 +283,13 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => _showLanguageDialog(context, settingsProvider),
             ),
             SwitchListTile(
-              secondary: const Icon(Icons.vibration, color: Color(0xFF0F766E)),
+              secondary: const Icon(Icons.vibration, color: AppColors.primary),
               title: Text(AppTranslations.tr('vibration', lang)),
               subtitle: Text(lang == 'en'
                   ? 'Haptic feedback on tasbih button tap'
                   : 'Getaran haptic pada tombol tasbih & penanda'),
               value: settingsProvider.isVibrationEnabled,
-              activeThumbColor: const Color(0xFF0F766E),
+              activeThumbColor: AppColors.primary,
               onChanged: (val) => settingsProvider.setVibrationEnabled(val),
             ),
 
@@ -361,7 +362,7 @@ class SettingsScreen extends StatelessWidget {
         style: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF0F766E),
+          color: AppColors.primary,
         ),
       ),
     );
@@ -374,7 +375,7 @@ class SettingsScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon, color: const Color(0xFF0F766E)),
+      leading: Icon(icon, color: AppColors.primary),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle, style: const TextStyle(fontSize: 12)),
       trailing: const Icon(Icons.chevron_right, size: 20, color: Colors.grey),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:googleapis/calendar/v3.dart' as cal;
 import '../services/google_calendar_service.dart';
 import '../../prayer_times/models/prayer_time.dart';
 
@@ -107,5 +108,15 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     }
+  }
+
+  Future<List<cal.Event>> fetchGoogleCalendarEvents({
+    DateTime? timeMin,
+    DateTime? timeMax,
+  }) async {
+    return _calendarService.fetchCalendarEvents(
+      timeMin: timeMin,
+      timeMax: timeMax,
+    );
   }
 }
